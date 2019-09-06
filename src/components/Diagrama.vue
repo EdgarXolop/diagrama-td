@@ -9,7 +9,7 @@
                         <tr>
                             <th>-</th>
                             <th v-for="c in columns" :key="'key-'+c">
-                                <input type="text" class="input" v-if="c < 6">
+                                <input type="text" class="input" v-model="rules[c-1]" maxlength="1" v-if="c < 6">
                             </th>
                             <th><abbr title="FDC">FDC</abbr></th>
                         </tr>
@@ -48,8 +48,28 @@
             </div>
         </div>
         <div class="columns">
-            <div class="column is-2 is-offset-2">
-                <button class="button is-primary" @click="generate">Generar</button>
+            <div class="column is-4 is-offset-2">
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Test</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input :class="['input',{'is-danger': !match && test.length > 0,'is-success': match && test.length > 0}]" v-model="test" type="text" placeholder="Texto a verificar">
+                            </div>
+                            <p class="help is-danger">
+                                {{result_message}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-2">
+                <button class="button is-info" @click="testText">Validar texto</button>
+            </div>
+            <div class="column is-2">
+                <button class="button is-primary" @click="generate">Generar Grafica</button>
             </div>
         </div>
         <div id="graph" class="container is-fluid" />
@@ -72,17 +92,21 @@ export default {
         title: "Diagrama de transicion de estados",
         columns: [1, 2, 3, 4, 5, 6],
         rows: [1, 2, 3, 4, 5, 6, 7],
+        rules: ["a","b","","",""], 
         values: [
-            [2, 3, 1, 1, 1, 1],
-            [4, 4, 1, 1, 1, 0],
-            [1, 1, 5, 5, 0, 1],
-            [1, 1, 1, 6, 1, 0],
-            [1, 1, 7, 7, 7, 1],
-            [1, 1, 1, 8, 8, 0],
-            [1, 1, 1, 4, 2, 1],
+            [3, 4, 1, 1, 1, 1],
+            [3, 4, 1, 1, 1, 0],
+            [1, 0, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
         ],
         nodes: [],
-        links: []
+        links: [],
+        match: false,
+        result_message: '',
+        test: ''
     }),
     methods: {
         generate() {
@@ -235,10 +259,10 @@ export default {
                     // Highlight the connections
                     links
                         .style('stroke-opacity', function (link_d) {
-                            return link_d.source === d.id || link_d.target === d.id ? 1 : .2;
+                            return link_d.source === d.id ? 1 : .2;
                         })
                         .style('stroke-width', function (link_d) {
-                            return link_d.source === d.id || link_d.target === d.id ? 4 : 1;
+                            return link_d.source === d.id ? 4 : 1;
                         })
 
 
@@ -275,14 +299,16 @@ export default {
                 }
             }
 
-            this.links = links.reduce((acc, current) => {
+            this.links = links
+            
+            /*.reduce((acc, current) => {
                 const x = acc.find(item => item.target === current.target && item.source === current.source);
                 if (!x) {
                     return acc.concat([current]);
                 } else {
                     return acc;
                 }
-            }, [])
+            }, [])*/
         },
         generateNodes() {
             let nodes = [];
@@ -316,6 +342,43 @@ export default {
             this.generateLinks()
             this.generateNodes()
         },
+        testText(){
+            
+            let correct_info = this.values.length > 0
+
+
+            if(correct_info){
+
+                this.result_message = ""
+                let charts = this.test.split("")
+                let row,rule_index,row_index=0
+
+                
+                for(let i in charts){
+                    row = this.values[row_index]
+
+                    rule_index = this.rules.indexOf(charts[i])
+
+                    if( rule_index != -1){
+                        
+                        this.match = row[rule_index] == 0 || (charts.length -1 == i && row[5] == 0)
+
+                        if( row[rule_index] - 2 > 0 ) row_index = row[rule_index] - 2
+                        
+                    }else{
+                        
+                        this.match=false
+                    }
+                    
+                }
+
+                return;
+            }
+            
+            this.match = false
+
+            this.result_message = "Parametros incompletos"
+        }
     },
 }
 </script>
